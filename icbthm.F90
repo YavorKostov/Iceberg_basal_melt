@@ -288,15 +288,15 @@ CONTAINS
       IF(.NOT. ln_passive_mode ) THEN
          !         ikbM=1
          ikbM=ikb
-         ts_trnds_icb(:,:,ikbM,jp_sal) =  ts_trnds_icb(:,:,ikbM,jp_sal)       &  !ts(:,:,ikbM,jp_sal,Kmm)                    &
-          & -REAL( cicb_meltB(:,:), dp)* (ts(:,:,ikbM,jp_sal,Kbb)       &
-          & * r1_rho0 * tmask(:,:,ikbM) /e3t(:,:,ikbM,Kbb))
+         ts_trnds_icb(ii,ij,ikbM,jp_sal) =  ts_trnds_icb(ii,ij,ikbM,jp_sal)       &  !ts(:,:,ikbM,jp_sal,Kmm)                    &
+          & -REAL( cicb_meltB(ii,ij), dp)* (ts(ii,ij,ikbM,jp_sal,Kbb)       &
+          & * r1_rho0 * tmask(ii,ij,ikbM) /e3t(ii,ij,ikbM,Kbb))
 
-         ts_trnds_icb(:,:,ikbM,jp_tem) =  ts_trnds_icb(:,:,ikbM,jp_tem)       &
-          & -REAL( cicb_meltB(:,:), dp)* (ts(:,:,ikbM,jp_tem,Kbb)       &
-          & * r1_rho0 * tmask(:,:,ikbM) /e3t(:,:,ikbM,Kbb))  &
-          & +REAL( cicb_hflxB(:,:), dp)                               &
-          & *(r1_rho0_rcp* tmask(:,:,ikbM) /e3t(:,:,ikbM,Kbb))
+         ts_trnds_icb(ii,ij,ikbM,jp_tem) =  ts_trnds_icb(ii,ij,ikbM,jp_tem)       &
+          & -REAL( cicb_meltB(ii,ij), dp)* (ts(ii,ij,ikbM,jp_tem,Kbb)       &
+          & * r1_rho0 * tmask(ii,ij,ikbM) /e3t(ii,ij,ikbM,Kbb))  &
+          & +REAL( cicb_hflxB(ii,ij), dp)                               &
+          & *(r1_rho0_rcp* tmask(ii,ij,ikbM) /e3t(ii,ij,ikbM,Kbb))
       ENDIF
        
          next=>this%next
