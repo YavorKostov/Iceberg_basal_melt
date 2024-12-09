@@ -139,7 +139,8 @@ CONTAINS
       !                                   !  use key_xios in cpp file and create content for XML file
       !
       CALL iom_put( "calving"           , berg_grid%calving      (:,:)   )  ! 'calving mass input'
-      CALL iom_put( "berg_floating_melt", berg_grid%floating_melt(:,:)+berg_grid%floating_meltB(:,:)   ) 
+      CALL iom_put( "berg_floating_melt",  &
+              & berg_grid%floating_melt(:,:)+berg_grid%floating_meltB(:,:)+berg_grid%floating_meltL(:,:)   ) 
       ! 'Melt rate of icebergs + bits' , 'kg/m2/s'
       CALL iom_put( "berg_stored_ice"   , berg_grid%stored_ice   (:,:,:) )  ! 'Accumulated ice mass by class', 'kg'
       !

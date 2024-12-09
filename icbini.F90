@@ -120,9 +120,11 @@ CONTAINS
       berg_grid%calving_hflx (:,:)   = 0._wp
       berg_grid%calving_hflxB (:,:)  = 0._wp
       berg_grid%calving_hflxBp (:,:) = 0._wp
+      berg_grid%calving_hflxL (:,:)  = 0._wp
       berg_grid%stored_heat  (:,:)   = 0._wp
       berg_grid%floating_melt(:,:)   = 0._wp
       berg_grid%floating_meltB(:,:)  = 0._wp
+      berg_grid%floating_meltL(:,:)  = 0._wp
       berg_grid%floating_meltBp(:,:)  = 0._wp
       berg_grid%maxclass     (:,:)   = nclasses
       berg_grid%stored_ice   (:,:,:) = 0._wp

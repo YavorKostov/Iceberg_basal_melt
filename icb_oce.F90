@@ -48,9 +48,11 @@ MODULE icb_oce
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   calving         ! Calving mass rate  (into stored ice)         [kg/s]
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   calving_hflx    ! Calving heat flux [heat content of calving]  [W/m2]
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   calving_hflxB   ! Basal calving heat flux [heat content of calving]  [W/m2]
+      REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   calving_hflxL   ! Lateral calving heat flux [heat content of calving]  [W/m2]
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   calving_hflxBp  ! Basal calving heat flux [heat content of calving]  other units
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   floating_melt   ! Net melting rate to icebergs + bits      [kg/s/m^2]
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   floating_meltB  ! Basal melting rate of icebergs      [kg/s/m^2]
+      REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   floating_meltL  ! Lateral melting rate of icebergs      [kg/s/m^2]      
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   floating_meltBp ! Basal melting rate of icebergs     other units
       INTEGER , DIMENSION(:,:)  , ALLOCATABLE ::   maxclass        ! maximum class number at calving source point
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE ::   tmp             ! Temporary work space
@@ -178,8 +180,10 @@ CONTAINS
       icb_alloc = icb_alloc + ill
       ALLOCATE( berg_grid%calving    (jpi,jpj) , berg_grid%calving_hflx (jpi,jpj)          ,   &
          &      berg_grid%calving_hflxB (jpi,jpj) , berg_grid%calving_hflxBp (jpi,jpj)     ,   &
+         &      berg_grid%calving_hflxL (jpi,jpj) ,                                            &
          &      berg_grid%stored_heat(jpi,jpj) , berg_grid%floating_melt(jpi,jpj)          ,   &
          &      berg_grid%floating_meltB(jpi,jpj) , berg_grid%floating_meltBp(jpi,jpj)     ,   &
+         &      berg_grid%floating_meltL(jpi,jpj) ,                                            &
          &      berg_grid%maxclass   (jpi,jpj) , berg_grid%stored_ice   (jpi,jpj,nclasses) ,   &
          &      berg_grid%tmp        (jpi,jpj) , STAT=ill)
       icb_alloc = icb_alloc + ill

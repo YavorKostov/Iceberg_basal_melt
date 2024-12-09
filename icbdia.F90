@@ -185,7 +185,8 @@ CONTAINS
       IF( .NOT.ln_bergdia )   RETURN
 
       zunused_calving      = SUM( berg_grid%calving(:,:) )
-      ztmpsum              = SUM( (berg_grid%floating_meltB(:,:) + berg_grid%floating_melt(:,:)) * e1e2t(:,:) * tmask_i(:,:) )
+      ztmpsum              = SUM( (berg_grid%floating_meltB(:,:)+berg_grid%floating_meltL(:,:) + berg_grid%floating_melt(:,:)) &
+              & * e1e2t(:,:) * tmask_i(:,:) )
       melt_net             = melt_net + ztmpsum * berg_dt
       calving_out_net      = calving_out_net + ( zunused_calving + ztmpsum ) * berg_dt
       ztmpsum              = SUM( berg_melt(:,:) * e1e2t(:,:) * tmask_i(:,:) )
@@ -196,7 +197,8 @@ CONTAINS
       bits_melt_net        = bits_melt_net + ztmpsum * berg_dt
       ztmpsum              = SUM( src_calving(:,:) * tmask_i(:,:) )
       calving_ret_net      = calving_ret_net + ztmpsum * berg_dt
-      ztmpsum              = SUM( (berg_grid%calving_hflx(:,:) + berg_grid%calving_hflxB(:,:)) * e1e2t(:,:) * tmask_i(:,:) )
+      ztmpsum              = SUM( (berg_grid%calving_hflx(:,:) + berg_grid%calving_hflxB(:,:)+ berg_grid%calving_hflxL(:,:)) &
+              &              * e1e2t(:,:) * tmask_i(:,:) )
       calving_out_heat_net = calving_out_heat_net + ztmpsum * berg_dt   ! Units of J
       !
       IF( ld_budge ) THEN
@@ -455,7 +457,8 @@ CONTAINS
       calving_rcv_net = calving_rcv_net + SUM( berg_grid%calving(:,:) ) * berg_dt
       calving_src_net = calving_rcv_net
       calving_src_heat_net = calving_src_heat_net +  &
-         &                      SUM( (berg_grid%calving_hflx(:,:)+berg_grid%calving_hflxB(:,:)) * e1e2t(:,:) ) * berg_dt   ! Units of J
+         &                      SUM( (berg_grid%calving_hflx(:,:)+berg_grid%calving_hflxB(:,:) &
+         &                            +berg_grid%calving_hflxL(:,:) ) * e1e2t(:,:) ) * berg_dt   ! Units of J
       calving_used_net = calving_used_net + pcalving_used * berg_dt
       calving_src_heat_used_net = calving_src_heat_used_net + SUM( pheat_used(:,:) )
       !

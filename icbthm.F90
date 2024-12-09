@@ -54,26 +54,31 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! timestep number, just passed to icb_utl_print_berg
       INTEGER, INTENT(in) ::   Kmm, Kbb  ! ocean time levelindex
       !
-      INTEGER  ::   ii, ij, jk, ikb, ikbM, ji, jj
+      INTEGER  ::   ii, ij, jk, ikb, ikbn, ikbM, ji, jj
       REAL(wp) ::   zM, zT, zW, zL, zSST, zVol, zLn, zWn, zTn, znVol, zIC, zDn, zD, zvb, zub, ztb
-      REAL(wp) ::   zMv, zMe, zMb, zmelt, zmeltB, dvo, zdvob, zdva, zdM, zSs, zdMe, zdMb, zdMv
+      REAL(wp) ::   zMv, zMe, zMb, zmelt, zmeltB, zmeltL, dvo, zdvob, zdva, zdM, zSs, zdMe, zdMb, zdMv
       REAL(wp) ::   zSSS, zfzpt
-      REAL(wp) ::   zMnew, zMnew1, zMnew2, zheat_hcflux, zheat_latent, zheat_hcfluxB, zheat_latentB, z1_12
+      REAL(wp) ::   zzLn, zzWn, zznVol_delta
+      REAL(wp) ::   zMnew, zMnew1, zMnew2, zheat_hcflux, zheat_latent
+      REAL(wp) ::   zheat_hcfluxB, zheat_latentB, zheat_hcfluxL, zheat_latentL, z1_12
       REAL(wp) ::   zMbits, znMbits, zdMbitsE, zdMbitsM, zLbits, zAbits, zMbb
-      REAL(wp) ::   zxi, zyj, zff, z1_rday, z1_e1e2, zdt, z1_dt, z1_dt_e1e2, zdepw
+      REAL(wp) ::   zxi, zyj, zff, z1_rday, z1_e1e2, zdt, z1_dt, z1_dt_e1e2, zdepw, zdep
       REAL(wp), DIMENSION(jpk) :: ztoce, zuoce, zvoce, ze3t, zzMv
       COMPLEX(dp), DIMENSION(jpi,jpj,jpk) :: ts_trnds_icb_tmp
       TYPE(iceberg), POINTER ::   this, next
       TYPE(point)  , POINTER ::   pt
       !
-      COMPLEX(dp), DIMENSION(jpi,jpj) :: cicb_melt, cicb_meltB,  cicb_meltBglo, cicb_hflx, cicb_hflxB, cicb_hflxBglo
+      COMPLEX(dp), DIMENSION(jpi,jpj) :: cicb_melt, cicb_meltB, cicb_meltL, cicb_meltBglo
+      COMPLEX(dp), DIMENSION(jpi,jpj) :: cicb_hflx, cicb_hflxB, cicb_hflxL, cicb_hflxBglo
       !!----------------------------------------------------------------------
       !
       !! initialiaze cicb_melt and cicb_heat
       cicb_melt = CMPLX( 0.e0, 0.e0, dp )
-      cicb_meltB = CMPLX( 0.e0, 0.e0, dp ) 
+      cicb_meltB = CMPLX( 0.e0, 0.e0, dp )
+      cicb_meltL = CMPLX( 0.e0, 0.e0, dp ) 
       cicb_hflx = CMPLX( 0.e0, 0.e0, dp )
       cicb_hflxB = CMPLX( 0.e0, 0.e0, dp )
+      cicb_hflxL = CMPLX( 0.e0, 0.e0, dp )
       ts_trnds_icb_tmp = CMPLX( 0.e0, 0.e0, dp ) 
       !
       z1_rday = 1._wp / rday
@@ -122,9 +127,9 @@ CONTAINS
          zL   = pt%length
          zxi  = pt%xi                                      ! position in (i,j) referential
          zyj  = pt%yj
-         ii  = INT( zxi + 0.5 )                            ! T-cell of the berg
+         ii  = INT( zxi + 0.5_wp )                            ! T-cell of the berg
          ii  = mi1( ii + (nn_hls-1) )
-         ij  = INT( zyj + 0.5 )              
+         ij  = INT( zyj + 0.5_wp )              
          ij  = mj1( ij + (nn_hls-1) )
          zVol = zT * zW * zL
 
@@ -174,6 +179,9 @@ CONTAINS
          !
          ! Wave erosion                (eqn M.A8 )
          zMe = MAX( z1_12*(zSST+2.)*zSs*(1._wp+COS(rpi*(zIC**3)))     , 0._wp ) * z1_rday
+
+!         !ATTENTION:
+!         zMe = 0._wp ! Temporarily set the erosion melting to zero for test purposes
 
          IF( ln_operator_splitting ) THEN      ! Operator split update of volume/mass
             zTn    = MAX( zT - zMb*zdt , 0._wp )         ! new total thickness (m)
@@ -237,11 +245,14 @@ CONTAINS
             !
             ! iceberg melt
             !! the use of DDPDD function for the cumulative sum is needed for reproducibility
-            zmelt    = ( zdM - zdMb - ( zdMbitsE - zdMbitsM ) ) * z1_dt   ! kg/s
+            zmelt    = ( zdM - zdMb -zdMv - ( zdMbitsE - zdMbitsM ) ) * z1_dt   ! kg/s
             CALL DDPDD( CMPLX( zmelt * z1_e1e2, 0.e0, dp ), cicb_melt(ii,ij) )
 
             zmeltB    = ( zdMb ) * z1_dt   ! kg/s
             cicb_meltB(ii,ij)= CMPLX( zmeltB * z1_e1e2, 0.e0, dp )
+
+            zmeltL    = ( zdMv ) * z1_dt   ! kg/s
+            cicb_meltL(ii,ij)= CMPLX( zmeltL * z1_e1e2, 0.e0, dp )
 
             !
             ! iceberg heat flux
@@ -255,6 +266,9 @@ CONTAINS
             zheat_hcfluxB = zmeltB * pt%heat_density       ! heat content flux : kg/s x J/kg = J/s
             zheat_latentB = - zmeltB * rLfus               ! latent heat flux:  kg/s x J/kg = J/s
             cicb_hflxB(ii,ij) = CMPLX( ( zheat_hcfluxB + zheat_latentB ) * z1_e1e2, 0.e0, dp )
+            zheat_hcfluxL = zmeltL * pt%heat_density       ! heat content flux : kg/s x J/kg = J/s
+            zheat_latentL = - zmeltL * rLfus               ! latent heat flux:  kg/s x J/kg = J/s
+            cicb_hflxL(ii,ij) = CMPLX( ( zheat_hcfluxL + zheat_latentL ) * z1_e1e2, 0.e0, dp )
             !
             ! diagnostics
             CALL icb_dia_melt( ii, ij, zMnew, zheat_hcflux+zheat_hcfluxB, zheat_latent+zheat_latentB, this%mass_scaling,       &
@@ -269,6 +283,7 @@ CONTAINS
 
            CALL DDPDD( cicb_hflxB(ii,ij), cicb_hflxBglo(ii,ij)) 
            CALL DDPDD( cicb_meltB(ii,ij), cicb_meltBglo(ii,ij))
+
 
          ! Rolling
          zDn = rho_berg_1_oce * zTn       ! draught (keel depth)
@@ -286,6 +301,46 @@ CONTAINS
          pt%length       = MAX( zWn , zLn )
 
       IF(.NOT. ln_passive_mode ) THEN
+
+         CALL icb_utl_getkb( ikbn, ze3t, zDn )
+         ikbn = MIN(ikbn,mbkt(ii,ij))
+         zdep = 0._wp
+         DO jk = 1,ikbn-1
+           zdep  = zdep  + e3t(ii,ij,jk,Kbb)
+
+           zzLn    = MAX( zL - zzMv(jk)*zdt , 0._wp )         ! new length (m)
+           zzWn    = MAX( zW - zzMv(jk)*zdt , 0._wp )         ! new width (m)
+           zznVol_delta  = MAX( e3t(ii,ij,jk,Kbb) * (zW * zL - zzWn * zzLn) /zdt , 0._wp )
+
+         ts_trnds_icb(ii,ij,jk,jp_sal) =  ts_trnds_icb(ii,ij,jk,jp_sal)       &  !ts(:,:,ikbM,jp_sal,Kmm)                    &
+          & -zznVol_delta* (ts(ii,ij,jk,jp_sal,Kbb)       &
+          & * z1_e1e2 * tmask(ii,ij,jk) /e3t(ii,ij,jk,Kbb))
+
+         ts_trnds_icb(ii,ij,jk,jp_tem) =  ts_trnds_icb(ii,ij,jk,jp_tem)       &
+          & -zznVol_delta* (ts(ii,ij,jk,jp_tem,Kbb)       &
+          & * z1_e1e2 * tmask(ii,ij,jk) /e3t(ii,ij,jk,Kbb))  &
+          & +zznVol_delta* rho0 *(pt%heat_density - rLfus) *z1_e1e2    &
+          & *(r1_rho0_rcp* tmask(ii,ij,jk) /e3t(ii,ij,jk,Kbb))
+         END DO
+
+         jk = ikbn
+         zzLn    = MAX( zL - zzMv(jk)*zdt , 0._wp )         ! new length (m)
+         zzWn    = MAX( zW - zzMv(jk)*zdt , 0._wp )         ! new width (m)
+
+         IF (zDn .GT. zdep) THEN
+         zznVol_delta  = MAX( e3t(ii,ij,jk,Kbb) * (zW * zL - zzWn * zzLn) /zdt , 0._wp ) &
+          &              * (zDn - zdep)/e3t(ii,ij,jk,Kbb)  
+
+         ts_trnds_icb(ii,ij,jk,jp_sal) =  ts_trnds_icb(ii,ij,jk,jp_sal)       &  !ts(:,:,ikbM,jp_sal,Kmm)                    &
+          & -zznVol_delta* (ts(ii,ij,jk,jp_sal,Kbb)       &
+          & * z1_e1e2 * tmask(ii,ij,jk) /e3t(ii,ij,jk,Kbb))
+
+         ts_trnds_icb(ii,ij,jk,jp_tem) =  ts_trnds_icb(ii,ij,jk,jp_tem)       &
+          & -zznVol_delta* (ts(ii,ij,jk,jp_tem,Kbb)       &
+          & * z1_e1e2 * tmask(ii,ij,jk) /e3t(ii,ij,jk,Kbb))  &
+          & +zznVol_delta* rho0 *(pt%heat_density - rLfus) *z1_e1e2   &
+          & *(r1_rho0_rcp* tmask(ii,ij,jk) /e3t(ii,ij,jk,Kbb))
+         ENDIF
          !         ikbM=1
          ikbM=ikb
          ts_trnds_icb(ii,ij,ikbM,jp_sal) =  ts_trnds_icb(ii,ij,ikbM,jp_sal)       &  !ts(:,:,ikbM,jp_sal,Kmm)                    &
@@ -341,7 +396,9 @@ CONTAINS
       ENDIF
 
       berg_grid%floating_meltB = REAL(cicb_meltBglo,dp)    ! kg/m2/s
+      berg_grid%floating_meltL = REAL(cicb_meltL,dp)    ! kg/m2/s
       berg_grid%calving_hflxB  = REAL(cicb_hflxBglo,dp)
+      berg_grid%calving_hflxL  = REAL(cicb_hflxL,dp)
       !
    END SUBROUTINE icb_thm
 

@@ -320,9 +320,8 @@ CONTAINS
 
       ts(:,:,:,:,Nrhs) = 0._wp         ! set tracer trends to zero
       IF( ln_icebergs .AND. (.NOT. ln_passive_mode ) ) THEN 
-              ts(:,:,:,:,Nrhs)=0.5_wp*(ts_trnds_icb(:,:,:,:)+ts_trnds_icb_b(:,:,:,:))
-              ts_trnds_icb_b(:,:,:,:)=ts_trnds_icb(:,:,:,:) 
-           WRITE(numout,*) 'kstp=',kstp,'min. trend=', MINVAL(ts(:,:,10,jp_sal,Nrhs))
+              ts(:,:,:,:,Nrhs)= 0.5_wp*(ts_trnds_icb(:,:,:,:)+ts_trnds_icb_b(:,:,:,:))
+              ts_trnds_icb_b(:,:,:,:)=ts_trnds_icb(:,:,:,:)
       ENDIF
 
       IF( ln_tile ) CALL dom_tile_start         ! [tiling] TRA tiling loop (1)
@@ -340,9 +339,6 @@ CONTAINS
          IF( ln_bdy     )   CALL bdy_tra_dmp( kstp, Nbb,      ts, Nrhs )  ! bdy damping trends
       END DO
 
-      IF( ln_icebergs ) THEN
-       WRITE(numout,*) 'kstp=',kstp,'Min. All Trends=', MINVAL(ts(:,:,10,jp_sal,Nrhs))
-      ENDIF
 
       IF( ln_tile ) CALL dom_tile_stop
 

@@ -1029,8 +1029,10 @@ CONTAINS
       IF( ln_icebergs ) THEN
          !
          CALL histwrite( nid_T, "calving"             , it, berg_grid%calving      , ndim_hT, ndex_hT )  
-         CALL histwrite( nid_T, "calving_heat"        , it, berg_grid%calving_hflx+berg_grid%calving_hflxB , ndim_hT, ndex_hT ) 
-         CALL histwrite( nid_T, "berg_floating_melt"  , it, berg_grid%floating_melt+berg_grid%floating_meltB, ndim_hT, ndex_hT )  
+         CALL histwrite( nid_T, "calving_heat"        , it, berg_grid%calving_hflx+berg_grid%calving_hflxB+berg_grid%calving_hflxL, &
+                 &  ndim_hT, ndex_hT ) 
+         CALL histwrite( nid_T, "berg_floating_melt"  , it, & 
+                 &  berg_grid%floating_melt+berg_grid%floating_meltB+berg_grid%floating_meltL, ndim_hT, ndex_hT )  
          !
          CALL histwrite( nid_T, "berg_stored_ice"     , it, berg_grid%stored_ice   , ndim_bT, ndex_bT )
          !
